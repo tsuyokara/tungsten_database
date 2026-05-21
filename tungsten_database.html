@@ -1,0 +1,535 @@
+
+<h2 class="sr-only">Tungsten pillar database — full wing architecture with definitions, functions, relationships, and metrics</h2>
+
+<style>
+:root {
+  --w-accent: #3C3489;
+  --w-accent-light: #EEEDFE;
+  --w-accent-mid: #7F77DD;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.db-header {
+  padding: 1.5rem 0 1rem;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  margin-bottom: 1.5rem;
+}
+.db-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+.db-name {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.db-sub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.filter-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { background: var(--color-background-secondary); }
+.filter-btn.active {
+  background: var(--w-accent-light);
+  border-color: var(--w-accent-mid);
+  color: var(--w-accent);
+}
+
+.wings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.wing-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.wing-card:hover {
+  border-color: var(--color-border-secondary);
+  background: var(--color-background-secondary);
+}
+.wing-card.expanded {
+  border-color: var(--w-accent-mid);
+  background: var(--color-background-primary);
+  grid-column: 1 / -1;
+}
+
+.wing-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wing-left { flex: 1; }
+.wing-tag {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+.tag-core { background: var(--w-accent-light); color: var(--w-accent); }
+.tag-defense { background: #FCEBEB; color: #A32D2D; }
+.tag-research { background: #EAF3DE; color: #3B6D11; }
+.tag-governance { background: #FAEEDA; color: #854F0B; }
+.tag-cyber { background: #E1F5EE; color: #0F6E56; }
+.tag-space { background: #E6F1FB; color: #185FA5; }
+.tag-subwing { background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
+
+.wing-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+.wing-brief {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.expand-icon {
+  font-size: 16px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: transform 0.2s;
+}
+.wing-card.expanded .expand-icon { transform: rotate(180deg); }
+
+.wing-detail {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+.wing-card.expanded .wing-detail { display: block; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+.detail-block {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1rem;
+}
+.detail-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 6px;
+}
+.detail-text {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+.relations-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+.relation-pill {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.subwings-row {
+  margin-top: 0.75rem;
+}
+.subwing-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.subwing-item:last-child { border-bottom: none; }
+.subwing-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  min-width: 90px;
+}
+.subwing-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.metrics-section {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 0.5px solid var(--color-border-tertiary);
+}
+.metrics-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 0.75rem;
+}
+.metric-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-rank {
+  font-size: 11px;
+  font-weight: 500;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--w-accent-light);
+  color: var(--w-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.metric-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+.metric-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.section-divider {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding: 0.75rem 0 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+</style>
+
+<div class="db-header">
+  <div class="db-title">Trident / Pillar I</div>
+  <div class="db-name">Tungsten</div>
+  <div class="db-sub">Physical substrate — construction, energy, defense, logistics, research, governance, space. Operational wedge: Arslan Construction Services (ACS). Holdco: Singapore. Governing doctrine: adaptable rigidity, negentropy alignment, third neutral hegemonic power.</div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" onclick="filterWings('all', this)">All wings</button>
+  <button class="filter-btn" onclick="filterWings('core', this)">Core infrastructure</button>
+  <button class="filter-btn" onclick="filterWings('defense', this)">Defense</button>
+  <button class="filter-btn" onclick="filterWings('research', this)">Research</button>
+  <button class="filter-btn" onclick="filterWings('governance', this)">Governance</button>
+  <button class="filter-btn" onclick="filterWings('cyber', this)">Cyber</button>
+  <button class="filter-btn" onclick="filterWings('space', this)">Space</button>
+</div>
+
+<div class="wings-grid" id="wingsGrid"></div>
+
+<div class="metrics-section">
+  <div class="metrics-title">Tungsten integration index — ranked success metrics</div>
+  <div class="metric-row">
+    <div class="metric-rank">1</div>
+    <div>
+      <div class="metric-name">Alignment percentage</div>
+      <div class="metric-desc">Ratio of intelligent control to total asset mass. Measures overlap between owned assets and Tungsten's intelligent integrated systems. Prevents conglomerate bloat — Tungsten will deliberately slow resource capture to protect this metric. Composite: owned+integrated, owned-not-integrated, integrated-not-owned.</div>
+    </div>
+  </div>
+  <div class="metric-row">
+    <div class="metric-rank">2</div>
+    <div>
+      <div class="metric-name">Resource capture-accumulation-control</div>
+      <div class="metric-desc">Incoming capital + value creation relative to input. Output/input ratio must always expand, not just stay positive. Disproportionate value creation is the standard. Early phase: profit-oriented for rapid scaling.</div>
+    </div>
+  </div>
+  <div class="metric-row">
+    <div class="metric-rank">3</div>
+    <div>
+      <div class="metric-name">Watt-creation per resource input</div>
+      <div class="metric-desc">Primary owner: Grid. Energy efficiency and scale as a unified metric. Oversees power creation efficiency across all Tungsten systems. Everything Tungsten does is ultimately an energy transformation problem.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const wings = [
+  {
+    id: 'grid',
+    name: 'Grid',
+    tag: 'core',
+    tagLabel: 'Core infrastructure',
+    brief: 'Energy creation and supply across Tungsten and external assets',
+    philosophy: 'Technology-agnostic, shaped by Tectonic and Axolotl nature-integration logic. Nature as participant in energy systems, not just fuel source.',
+    primary: 'Generation, integration, load management, efficiency, power creation. Does not store energy — that is Banks.',
+    external: 'Powers non-Tungsten assets as primary scaling mechanism. Flywheel: external revenue → Tungsten scaling → Grid expansion → more external capacity.',
+    relations: ['Banks (energy reserves)', 'IRA (allocation logic)', 'Tectonic (nature-integration)', 'Axolotl (biomimetic philosophy)'],
+    metricOwner: 'Primary owner of Watt-creation per resource input (metric 3)',
+    subwings: null
+  },
+  {
+    id: 'banks',
+    name: 'Banks',
+    tag: 'core',
+    tagLabel: 'Core infrastructure',
+    brief: 'Cross-pillar static asset storage and real-time resource sensing',
+    philosophy: 'Banks is not a warehouse — it is an intelligent resource allocation and processing system. Metabolic organ, not stockpile. Real-time sensing and reporting as critical as physical storage.',
+    primary: 'Stores all static-but-deployable assets across Tungsten, Axolotl, Cyberspace. Oversight by Tungsten.',
+    breakdown: 'Tungsten Banks: energy reserves, raw materials, production-queue metals. Axolotl Banks: biological material, compounds, specimens. Cyberspace Banks: data centers, compute, model weights.',
+    relations: ['Grid (stores energy Grid generates)', 'IRA (physical ledger — ground truth for allocation)', 'Tectonic (resource data feed)', 'All three pillars'],
+    subwings: null
+  },
+  {
+    id: 'meridian',
+    name: 'Meridian',
+    tag: 'core',
+    tagLabel: 'Core infrastructure',
+    brief: "Tungsten's circulatory system — physical and informational logistics",
+    philosophy: 'Physical and informational logistics are the same problem at different substrate levels. Unified under one wing.',
+    primary: 'Logistics efficiency, coherence, reach, latency collapse. Operates own infrastructure. Can commission purpose-built logistics products from Tungsten megafactories.',
+    scope: 'Spans all three pillars plus external contracted/B2B assets. Meridian is the most cross-cutting wing in Tungsten.',
+    relations: ["The Net's Architecture (informational logistics overlap)", 'Tungsten fabs (commissions vehicles/transport)', 'IRA', 'All pillar assets'],
+    subwings: [
+      { name: 'Physical division', desc: 'Supply chains, transport, distribution, last-mile. Owns and operates infrastructure.' },
+      { name: 'Cyberspace division', desc: 'Informational logistics — data routing, decision flow, latency management across The Net.' }
+    ]
+  },
+  {
+    id: 'tectonic',
+    name: 'Tectonic',
+    tag: 'core',
+    tagLabel: 'Core infrastructure',
+    brief: 'Geology and geoengineering — nature utilized as organized intelligent system',
+    philosophy: 'Meta-goal: utilize nature to solve its own problems. Biomimetic and systems intervention logic, not brute-force extraction. Dual orientation: extractive + interventionist, unified.',
+    primary: 'Resource mapping, geological surveying, active geoengineering — atmosphere, seismic, hydrological systems. Works closest with Axolotl of all Tungsten wings.',
+    relations: ['Banks (feeds resource capacity data → receives refined resources)', 'Axolotl Solum', 'Axolotl Tangaroa', 'Spacetime-Engineering'],
+    subwings: null
+  },
+  {
+    id: 'praxis',
+    name: 'Praxis',
+    tag: 'core',
+    tagLabel: 'Core infrastructure',
+    brief: 'Human capital design — models civilization\'s agent pool as a dynamic complex system',
+    philosophy: 'Praxis is a control system, not an HR department. Converts theory into action through practice across all agent types.',
+    primary: 'Hiring, talent development, management, capability-space expansion, alignment verification. Models Tungsten agent pool as dynamic complex system for active manipulation.',
+    agentScope: 'All agents under Tungsten employment: humans, AIs, autonomous vehicles, drones. Substrate-agnostic.',
+    external: 'Global talent scouting. Civilizational agent modeling — maps every node at resolution scaled to impact. Anti-corrupt-meritocracy constraint: weights high-impact potential over existing elite pipelines.',
+    relations: ['TRI (pipeline: TRI → Praxis → Tungsten)', 'Axolotl Aether (talent design → cognitive enhancement)', 'IRA'],
+    subwings: null
+  },
+  {
+    id: 'tri',
+    name: 'TRI',
+    tag: 'research',
+    tagLabel: 'Research',
+    brief: 'Research university — unconditionally funded, full-spectrum, independent',
+    philosophy: 'Research independence structurally guaranteed by funding design, not policy. Bell Labs model: unconditional funding, no short-term output pressure, disproportionate civilizational value.',
+    primary: 'All domains relevant to Trident: physics, biology, CS, governance, economics. Most protected asset in Tungsten — last to be cut during contraction.',
+    posture: 'Dual: public (publications, global academic credibility, open research) + private (proprietary findings feeding Wolfram, Spacetime, Convergence). Public credibility funds talent pipeline; private capacity creates asymmetric advantage.',
+    relations: ['Praxis (TRI → Praxis → Tungsten pipeline)', 'Spacetime (physics/engineering talent)', 'Wolfram (classified research)', 'Convergence (aerospace talent)'],
+    subwings: null
+  },
+  {
+    id: 'spacetime',
+    name: 'Spacetime',
+    tag: 'research',
+    tagLabel: 'Research',
+    brief: 'Physics R&D — theory to application pipeline, integrates with all relevant wings',
+    philosophy: 'Primarily research → deployment. Naturally integrates across all relevant wings. In astrophysics, astroengineering, aerospace: Spacetime leads into Convergence.',
+    primary: 'Physics-focused research, talent creation, research centers, advancing pedagogy. Feeds Convergence as operational deployment layer.',
+    relations: ['Convergence (Spacetime → Engineering → Convergence pipeline)', 'TRI (talent)', 'Wolfram (defense applications)', 'Tectonic'],
+    subwings: [
+      { name: 'Chronos', desc: 'Temporal physics sub-wing. Manipulation of temporality: research (10yr) → technology development (50yr) → civilizational integration (100yr). TRI-dependent in early decades. Falsifiability frontier.' },
+      { name: 'Engineering', desc: 'Applied physics. Tangible builds and near/mid-term R&D papers. Translation layer: converts physics insight into infrastructure. Interface between Spacetime\'s theoretical output and all other Tungsten wings.' }
+    ]
+  },
+  {
+    id: 'convergence',
+    name: 'Convergence',
+    tag: 'space',
+    tagLabel: 'Space',
+    brief: 'Space wing — launch infrastructure, asteroid mining, lunar capture',
+    philosophy: 'Moon is not a destination — it is infrastructure. Low-gravity, resource-rich staging node for deep space. Sequential operationalization, no hard start date.',
+    primary: 'Launch stations → asteroid mining → lunar capture → Moon as deep-space launch platform → further.',
+    activation: 'Activates when Tungsten has resource leverage with optionality beyond highest-weighted success metrics. Sequential — parts go operational as conditions allow.',
+    satellite: 'Likely acquires orbit saturation via buyout of existing player rather than building from scratch.',
+    relations: ['Spacetime-Engineering (theory → application → Convergence deployment)', 'Banks (resource stockpiling for space ops)', 'Grid (energy for launch)', 'Tectonic (geological surveying for extraction)'],
+    subwings: null
+  },
+  {
+    id: 'wolfram',
+    name: 'Wolfram',
+    tag: 'defense',
+    tagLabel: 'Defense',
+    brief: 'Defense wing — protects all Tungsten assets including partnerships',
+    philosophy: 'Defensive posture with offensive/deterrence capability. Legitimacy through opaque-backend / transparent-frontend doctrine.',
+    primary: 'Protects Tungsten assets. Asset definition deliberately broad: includes partnerships, making defense perimeter strategically expansive.',
+    doctrine: 'Opaque backend: classified predictive logic, stress-tested in simulation before deployment. Transparent frontend: published justification framework post-action, rapidly updated after each publication. Algorithm is living — evolves with threat landscape.',
+    tech: 'Develops proprietary technology + consumes from Spacetime-Engineering.',
+    relations: ['Erebus (cyber offensive/defensive weapon operated by Wolfram)', 'Spacetime-Engineering (tech pipeline)', 'Lattice (neutrality doctrine alignment)', 'Metatron (alignment verification)'],
+    subwings: null
+  },
+  {
+    id: 'lattice',
+    name: 'Lattice',
+    tag: 'governance',
+    tagLabel: 'Governance',
+    brief: 'Governance architecture — adaptably rigid internal constitution, external law influence',
+    philosophy: 'Tungsten as third neutral indispensable hegemonic power. Neutrality as the only durable sovereignty — become so structurally load-bearing that attacking you is self-defeating for any actor.',
+    internal: 'Keeps Tungsten adaptably rigid as it scales. Constitutional alignment with negentropy goals. Governs at civilizational scale while remaining internally efficient.',
+    external: 'Influences sovereign and international legal systems toward Tungsten/Axolotl goals. Maintains ideological neutrality perception while directionally pulling external systems toward Trident\'s constitutional values.',
+    singapore: 'Singapore Holdco as structural expression of neutrality — bridge between U.S. and China poles.',
+    tension: 'Negentropy goals are not actually neutral — they are a specific value system. Lattice presents them as neutral by framing them as anti-entropy rather than pro-ideology. Track record, not transparency, builds credibility.',
+    relations: ['Wolfram (neutrality doctrine must accommodate preemptive strike logic)', 'IRA (constitutional economic OS)', 'The Net Architecture (external governance influence)'],
+    subwings: null
+  },
+  {
+    id: 'metatron',
+    name: 'Metatron',
+    tag: 'cyber',
+    tagLabel: 'Cyber',
+    brief: 'AI alignment agent — governs Tungsten hard boundaries, monitors all vulnerabilities',
+    philosophy: 'An agent, not a committee. Metatron in theology: scribe of God, boundary between divine and human, enforcer of cosmic order. Metatron does not create — it ensures the integrity of what exists.',
+    primary: 'Hard boundary enforcement for Tungsten. Vulnerability monitoring: viruses, bugs, hacks, surveillance vectors. Intelligent alignment verification — ensures systems remain incentive-aligned with Tungsten/Axolotl constitutional goals.',
+    scope: 'Cross-pillar jurisdiction: Tungsten and Axolotl assets. Lives in Cyberspace as reality substrate.',
+    command: 'Reports through Trident alignment architecture — deliberately separated from Erebus (offensive) command structure.',
+    relations: ['Erebus (shadow counterpart, separate command)', 'Wolfram (boundary coordination)', 'Axolotl (cross-pillar oversight)', 'The Net (cyberspace substrate)'],
+    subwings: null
+  },
+  {
+    id: 'erebus',
+    name: 'Erebus',
+    tag: 'cyber',
+    tagLabel: 'Cyber',
+    brief: "Wolfram's cyber weapon — dark counterpart to Metatron",
+    philosophy: "Primordial darkness — operates in opacity. Erebus in mythology: the space before form. Appropriate for an entity that projects force in cyberspace without visibility.",
+    primary: 'Defensive and offensive cyber capability. More constrained than Metatron — tighter operational leash because offensive cyber is higher political risk.',
+    command: 'Operated primarily by Wolfram. Separate from Metatron\'s command structure — prevents offensive capability from rationalizing internal alignment failures.',
+    relations: ['Wolfram (primary command)', 'Metatron (architectural counterpart, separate command)', 'The Net (cyberspace substrate)'],
+    subwings: null
+  }
+];
+
+function filterWings(category, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.wing-card').forEach(card => {
+    if (category === 'all' || card.dataset.tag === category) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+function toggleWing(id) {
+  const card = document.getElementById('card-' + id);
+  const wasExpanded = card.classList.contains('expanded');
+  document.querySelectorAll('.wing-card.expanded').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) card.classList.add('expanded');
+}
+
+function renderWings() {
+  const grid = document.getElementById('wingsGrid');
+  grid.innerHTML = wings.map(w => {
+    const tagClass = 'tag-' + w.tag;
+    const relations = w.relations ? w.relations.map(r => `<span class="relation-pill">${r}</span>`).join('') : '';
+    const subwingsHtml = w.subwings ? `
+      <div class="subwings-row">
+        <div class="detail-label">Sub-wings</div>
+        ${w.subwings.map(s => `<div class="subwing-item"><div class="subwing-name">${s.name}</div><div class="subwing-desc">${s.desc}</div></div>`).join('')}
+      </div>` : '';
+
+    const extraBlocks = [];
+    if (w.breakdown) extraBlocks.push({ label: 'Asset breakdown', text: w.breakdown });
+    if (w.philosophy) extraBlocks.push({ label: 'Philosophy', text: w.philosophy });
+    if (w.primary) extraBlocks.push({ label: 'Primary functions', text: w.primary });
+    if (w.doctrine) extraBlocks.push({ label: 'Doctrine', text: w.doctrine });
+    if (w.external) extraBlocks.push({ label: 'External mandate', text: w.external });
+    if (w.activation) extraBlocks.push({ label: 'Activation logic', text: w.activation });
+    if (w.satellite) extraBlocks.push({ label: 'Satellite strategy', text: w.satellite });
+    if (w.internal) extraBlocks.push({ label: 'Internal function', text: w.internal });
+    if (w.tension) extraBlocks.push({ label: 'Strategic tension', text: w.tension });
+    if (w.singapore) extraBlocks.push({ label: 'Singapore rationale', text: w.singapore });
+    if (w.posture) extraBlocks.push({ label: 'Public/private posture', text: w.posture });
+    if (w.agentScope) extraBlocks.push({ label: 'Agent scope', text: w.agentScope });
+    if (w.scope) extraBlocks.push({ label: 'Scope', text: w.scope });
+    if (w.command) extraBlocks.push({ label: 'Command structure', text: w.command });
+    if (w.tech) extraBlocks.push({ label: 'Technology', text: w.tech });
+    if (w.metricOwner) extraBlocks.push({ label: 'Metric ownership', text: w.metricOwner });
+
+    const blocksHtml = extraBlocks.map(b => `
+      <div class="detail-block">
+        <div class="detail-label">${b.label}</div>
+        <div class="detail-text">${b.text}</div>
+      </div>`).join('');
+
+    return `
+    <div class="wing-card" id="card-${w.id}" data-tag="${w.tag}" onclick="toggleWing('${w.id}')">
+      <div class="wing-top">
+        <div class="wing-left">
+          <span class="wing-tag ${tagClass}">${w.tagLabel}</span>
+          <div class="wing-name">${w.name}</div>
+          <div class="wing-brief">${w.brief}</div>
+        </div>
+        <i class="ti ti-chevron-down expand-icon" aria-hidden="true"></i>
+      </div>
+      <div class="wing-detail">
+        <div class="detail-grid">${blocksHtml}</div>
+        ${subwingsHtml}
+        ${relations ? `<div class="detail-label" style="margin-top:0.75rem;margin-bottom:6px;">Interfaces</div><div class="relations-row">${relations}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+renderWings();
+</script>
